@@ -103,6 +103,7 @@ def ImplicitEuler(diferencial, x0, xf, y0, tol, N_Partitions, Gauss_Seidel_Itera
     X = [x0 + h*i  for i in range(0, N_Partitions + 1)]
     Y = [y0] * (N_Partitions + 1)
     y_ant = Y
+
     for it in range(1, Gauss_Seidel_Iterations):
         for i in range(0, N_Partitions):
             Y[i + 1] = Y[i] + h * diferencial(X[i + 1], y_ant[i + 0])
@@ -125,6 +126,28 @@ def Heun(diferencial, x0, xf, y0, N_Partitions):
     Y = [y0]
 
     for i in range(1, N_Partitions + 1):
-        #Y.append(Y[i - 1] + h * diferencial(X[i - 1], Y[i - 1]))
         Y.append(General_Heun(diferencial, X[i - 1], Y[i -1], h))
     return (X, Y)
+
+# Método Gauss-Seidel para solucionar um sistema de equações diagonalmente dominante 
+def Gauss_Seidel(Equations:dict, InitialValues:dict, error:float):
+    SYSTEM_SIZE = len(Equations)
+    Eq  = list(Equations.values())
+    Res = list(InitialValues.values())
+    Ant = list(Res)
+
+    #repetição
+    N = 0
+    controle = 0
+    while (controle == 0):
+        controle = 1
+        for i in range(0, SYSTEM_SIZE):
+            Res[i] = Eq[i](*Ant)
+            #print(f"abs({i}) = {abs(Res[i] - Ant[i])}")
+            if (abs(Res[i] - Ant[i]) > error):
+                controle = 0
+        Ant = list(Res)
+        N = N + 1
+    N = N - 1
+    #print(f"Foi preciso {N - 1} interacoes")
+    return Res
