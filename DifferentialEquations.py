@@ -1,7 +1,7 @@
 import numpy as np
 
 #   Biblioteca que implementa funcionalidades para resolver 
-#   sistemas de N equações digerenciais numericamente
+#   sistemas de N equações diferenciais numericamente
 
 def Diferencial(Equations:dict, Values:list, i):
     return list(Equations.values())[i](*Values)
@@ -12,7 +12,7 @@ def MetodoNumerico(m, x, x_0, y_0):
 
 # Método Heun genérico
 # g: função dydx
-def Heun (g, xi, yi, h):
+def General_Heun(g, xi, yi, h):
     k1 = g(xi, yi)
     k2 = g(xi + h, yi + k1 * h)
     k = (k1 + k2)/2
@@ -86,32 +86,7 @@ def SolveEDO_Euler(Equations:dict, InitialValues:dict, X_final, passo):
     return Functions
 
 
-# Algo ainda está errado
-def SolveEDO_Heun(Equations:dict, InitialValues:dict, X_final, passo):
-    SYSTEM_SIZE = len(Equations)
-
-    Values = list(InitialValues.values())
-    Functions = [[Values[i]] for i in range(SYSTEM_SIZE)]
-    dydx = [None] * SYSTEM_SIZE
-    EixoX_List = [*np.arange(0, X_final, passo)]
-
-    # 1 representa índice 1 da lista, e não x = 1
-    for t in EixoX_List[1:]:
-        # Cálculo dos Diferenciais
-        for i in range(SYSTEM_SIZE):
-            k1 = Diferencial(Equations, Values, i)
-            k2 = Diferencial(Equations, [MetodoNumerico(k1, t, t - passo, x) for x in Values], i)
-            dydx[i] = (k1 + k2)/2
-
-
-        # Aproximação dos pontos
-        for i in range(SYSTEM_SIZE):
-            Values[i] = MetodoNumerico(dydx[i], t, t - passo, Values[i])
-
-            Functions[i].append(Values[i])
-    return Functions
-
-
+# Método Euler Explícito para resolução uma EDO
 def ExplicitEuler(diferencial, x0, xf, y0, N_Partitions):
     h = (xf - x0)/N_Partitions
     X = [x0 + h*i  for i in range(0, N_Partitions + 1)]
@@ -122,6 +97,7 @@ def ExplicitEuler(diferencial, x0, xf, y0, N_Partitions):
     return (X, Y)
 
 
+# Método Euler Implícito para resolução uma EDO
 def ImplicitEuler(diferencial, x0, xf, y0, tol, N_Partitions, Gauss_Seidel_Iterations):
     h = (xf - x0)/N_Partitions
     X = [x0 + h*i  for i in range(0, N_Partitions + 1)]
@@ -129,12 +105,26 @@ def ImplicitEuler(diferencial, x0, xf, y0, tol, N_Partitions, Gauss_Seidel_Itera
     y_ant = Y
     for it in range(1, Gauss_Seidel_Iterations):
         for i in range(0, N_Partitions):
-            Y[i + 1] = Y[i] + h * diferencial(X[i + 1], y_ant[i + 1])
+            Y[i + 1] = Y[i] + h * diferencial(X[i + 1], y_ant[i + 0])
+
         controle = 1
         for i in range (0, N_Partitions):
             if (abs(Y[i] - y_ant[i]) > tol):
                 controle = 0
+        
         if (it > 1 and controle == 1):
             break
         y_ant = Y
+    return (X, Y)
+
+
+# Método Heun para resolução uma EDO
+def Heun(diferencial, x0, xf, y0, N_Partitions):
+    h = (xf - x0)/N_Partitions
+    X = [x0 + h*i  for i in range(0, N_Partitions + 1)]
+    Y = [y0]
+
+    for i in range(1, N_Partitions + 1):
+        #Y.append(Y[i - 1] + h * diferencial(X[i - 1], Y[i - 1]))
+        Y.append(General_Heun(diferencial, X[i - 1], Y[i -1], h))
     return (X, Y)
