@@ -22,9 +22,10 @@ def General_Heun(g, xi, yi, h):
 
 def SolveEDO_Euler(Equations:dict, InitialValues:dict, X_final, passo):
     """
-    DESCRIPTION: Resolve um sistema de N equações diferenciais ordinárias.
+    ## DESCRIPTION
+        Resolve um sistema de N equações diferenciais ordinárias.
 
-    PARAMETERS:
+    ## PARAMETERS
         Equations:dict - dicionário bem formatado (formato especificado em exemplos) contendo
         N equações diferenciais ordinárias;
 
@@ -36,24 +37,25 @@ def SolveEDO_Euler(Equations:dict, InitialValues:dict, X_final, passo):
         passo - tamanho da partição, isto é, sendo x a variável independente (dy/dx),
         então o passo é dado pela distância entre as coordenadas x de um ponto e o seu próximo
     
-    RETURN: retorna uma lista contendo um conjunto de N listas que representam os resultados para cada
-    função, seguindo a ordem de boa formatação
+    ## RETURN
+        retorna uma lista contendo um conjunto de N listas que representam os resultados para cada função, seguindo a ordem de boa formatação
 
-    EXAMPLES:
+    ## EXAMPLES
         Equacoes = {
             "dL": lambda L, M, A: (r1 * M *(1 - L/Kl) - (b1 + Lambda) * L),
-            "dM": lambda L, M, A: (Lambda * ((A**2) / (c1**2 + A**2)) * L * (1 - M/Km) - (b2 * M)),
-            "dA": lambda L, M, A: (r2 * A * (1 - A/Ka) - b3 * ((A**2) / (c2**2 + A**2)) * M)
+                "dM": lambda L, M, A: (Lambda * ((A**2) / (c1**2 + A**2)) * L * (1 - M/Km) - (b2 * M)),
+                    "dA": lambda L, M, A: (r2 * A * (1 - A/Ka) - b3 * ((A**2) / (c2**2 + A**2)) * M)
         }
-        #
-        #
+        
+        
         Inicial = {
             "L": 100000000,
-            "M": 0,
-            "A": 10000000
+                "M": 0,
+                    "A": 10000000
         }
         #
-    OBSERVATIONS: Toda as funções (L, M e A) são parâmetros de 'lambda' em todas as funções e DEVEM estar sempre
+    ## OBSERVATIONS
+    Toda as funções (L, M e A) são parâmetros de 'lambda' em todas as funções e DEVEM estar sempre
     na mesma ordem, bem como na ordem de disposição das equações dentro do dicionário (dL, dM e dA) e também
     no dicionário de valores iniciais (L, M e A), esta é a boa formatação. Qualquer disparidade entre a
     ordenadação de algum destes elementos gerará ERRO. Como por exemplo: 
@@ -86,6 +88,37 @@ def SolveEDO_Euler(Equations:dict, InitialValues:dict, X_final, passo):
     return Functions
 
 
+
+def SolveEDO_Heun(Equations:dict, InitialValues:dict, X_final, N_Partitions):
+    """
+    ## DESCRIPTION
+        Resolve um sistema de N equações diferenciais ordinárias. Segue as mesmas diretrizes da função
+        SolveEDO_Euler, exceto pelo parâmetro N_Partitions.
+    """
+
+    SYSTEM_SIZE = len(Equations)
+    h = (X_final - 0) / N_Partitions
+    Eq  = list(Equations.values())
+    Resultados = [[value] for value in InitialValues.values()]
+    Atual = [value for value in InitialValues.values()]
+    Anterior = list(Atual)
+
+    Temporario = [None] * SYSTEM_SIZE
+    dydx = [None] * SYSTEM_SIZE
+
+    for i in range(0, N_Partitions):
+        for j in range(0, SYSTEM_SIZE):
+            dydx[j] = Eq[j](*Anterior)
+            Temporario[j] = dydx[j] * h + Anterior[j]
+        for j in range(0, SYSTEM_SIZE):
+            dydx[j] = (dydx[j] + Eq[j](*Temporario))/2
+            Atual[j] = Anterior[j] + dydx[j] * h
+            Resultados[j].append(Atual[j])
+        Anterior = list(Atual)
+    
+    return Resultados
+
+
 # Método Euler Explícito para resolução uma EDO
 def ExplicitEuler(diferencial, x0, xf, y0, N_Partitions):
     h = (xf - x0)/N_Partitions
@@ -96,6 +129,15 @@ def ExplicitEuler(diferencial, x0, xf, y0, N_Partitions):
         Y.append(Y[i - 1] + h * diferencial(X[i - 1], Y[i - 1]))
     return (X, Y)
 
+# Método Heun para resolução uma EDO
+def Heun(diferencial, x0, xf, y0, N_Partitions):
+    h = (xf - x0)/N_Partitions
+    X = [x0 + h*i  for i in range(0, N_Partitions + 1)]
+    Y = [y0]
+
+    for i in range(1, N_Partitions + 1):
+        Y.append(General_Heun(diferencial, X[i - 1], Y[i -1], h))
+    return (X, Y)
 
 # Método Euler Implícito para resolução uma EDO
 def ImplicitEuler(diferencial, x0, xf, y0, tol, N_Partitions, Gauss_Seidel_Iterations):
@@ -119,24 +161,33 @@ def ImplicitEuler(diferencial, x0, xf, y0, tol, N_Partitions, Gauss_Seidel_Itera
     return (X, Y)
 
 
-# Método Heun para resolução uma EDO
-def Heun(diferencial, x0, xf, y0, N_Partitions):
-    h = (xf - x0)/N_Partitions
-    X = [x0 + h*i  for i in range(0, N_Partitions + 1)]
-    Y = [y0]
 
-    for i in range(1, N_Partitions + 1):
-        Y.append(General_Heun(diferencial, X[i - 1], Y[i -1], h))
-    return (X, Y)
 
-# Método Gauss-Seidel para solucionar um sistema de equações diagonalmente dominante 
+
 def Gauss_Seidel(Equations:dict, InitialValues:dict, error:float):
+    """
+    ## DESCRIPTION
+        Método Gauss-Seidel para solucionar um sistema de equações diagonalmente dominante
+
+    ## EXAMPLES:
+        Equations = {
+            "X": lambda x, y, z: 1/4 * (+ 6  + 2*y + 1*z),
+                "Y": lambda x, y, z: 1/6 * (- 10 - 2*x - 2*z),
+                    "Z": lambda x, y, z: 1/8 * (+ 2  + 1*x + 2*y)
+            }
+        InitialValues = {
+                "X": 0,
+                    "Y": 0,
+                        "Z": 0
+            }
+        error = 0.001
+    """
+
     SYSTEM_SIZE = len(Equations)
     Eq  = list(Equations.values())
     Res = list(InitialValues.values())
     Ant = list(Res)
 
-    #repetição
     N = 0
     controle = 0
     while (controle == 0):
@@ -151,3 +202,5 @@ def Gauss_Seidel(Equations:dict, InitialValues:dict, error:float):
     N = N - 1
     #print(f"Foi preciso {N - 1} interacoes")
     return Res
+
+
