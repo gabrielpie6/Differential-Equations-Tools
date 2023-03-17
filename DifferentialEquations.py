@@ -10,8 +10,13 @@ def Diferencial(Equations:dict, Values:list, i):
 def MetodoNumerico(m, x, x_0, y_0):
     return m * (x - x_0) + y_0
 
+# Método Euler genérico
+# g: função derivada
+def General_Euler(g, xi, yi, h):
+    return g(xi, yi) * h + yi
+
 # Método Heun genérico
-# g: função dydx
+# g: função derivada
 def General_Heun(g, xi, yi, h):
     k1 = g(xi, yi)
     k2 = g(xi + h, yi + k1 * h)
